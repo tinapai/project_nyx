@@ -1,0 +1,139 @@
+---
+title: ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+library(plotly)
+library(ggplot2)
+library(dplyr)
+
+
+movie_bechdel = read.csv("movie_bechdel.csv")
+```
+# Women Empowerment: The Bechdel Test
+
+(https://en.wikipedia.org/wiki/Bechdel_test) The Bechdel test (/ˈbɛkdəl/ BEK-dəl), also known as the Bechdel–Wallace test, is a measure of the representation of women in fiction. It asks whether a work features at least two women who talk to each other about something other than a man. The requirement that the two women must be named is sometimes added.
+
+# Do movies that pass the Bechdel Test get rated more highly?
+
+We want to see whether movies that pass the Bechdel Test are rated more highly than movies that fail the Bechdel test. We examine this for men and for women separately.
+
+## Among Women:
+
+```{r bechdel_female, echo=FALSE}
+#plot
+movie_bechdel %>%
+  filter(gender == "F") %>%
+  mutate(passed_bechdel = ifelse(rating_bechdel >= 3, "Passed", "Failed")) %>%
+  mutate(rated_4_plus = ifelse(rating_user >= 4, "Yes", "No")) %>%
+  ggplot(aes(fill=rated_4_plus, x=passed_bechdel)) + 
+  geom_bar(position="fill") +
+  ggtitle("Female Users Proportion of Rating 4+ \n by Pass or Fail Bechdel Test") +
+  ylab("Proportion") +
+  geom_text(aes(label=stat(count)), stat="count", position= 'fill') +
+  scale_fill_manual(values = c("#a73c5a", "#ff7954"))
+```
+
+### Chi-Square Test
+
+From a chi-square test on the proportion of movies getting a 4+ rating, the p-value is significant, and indicates that the movies that fail the Bechdel Test have a higher proportion of 4+ ratings.
+
+```{r bechdel_female_chi, echo=FALSE}
+#chi square test
+female_ratings = movie_bechdel %>%
+  filter(gender == "F") %>%
+  mutate(passed_bechdel = ifelse(rating_bechdel >= 3, "Passed", "Failed")) %>%
+  group_by(passed_bechdel) %>%
+  summarise(n_ratings_4_plus = sum(rating_user >= 4), n_total = n())
+
+print(female_ratings)
+print(paste("Proportion of females that rate >=4 for movies that passed Bechdel:", female_ratings$n_ratings_4_plus[2]/female_ratings$n_total[2]))
+print(paste("Proportion of females that rate >=4 for movies that failed Bechdel:", female_ratings$n_ratings_4_plus[1]/female_ratings$n_total[1]))
+
+prop.test(female_ratings$n_ratings_4_plus, female_ratings$n_total)
+```
+
+## Among Men:
+
+```{r bechdel_male, echo=FALSE}
+#plot
+movie_bechdel %>%
+  filter(gender == "M") %>%
+  mutate(passed_bechdel = ifelse(rating_bechdel >= 3, "Passed", "Failed")) %>%
+  mutate(rated_4_plus = ifelse(rating_user >= 4, "Yes", "No")) %>%
+  ggplot(aes(fill=rated_4_plus, x=passed_bechdel)) + 
+  geom_bar(position="fill") +
+  ggtitle("Male Users Proportion of Rating 4+ \n by Pass or Fail Bechdel Test") +
+  ylab("Proportion") +
+  geom_text(aes(label=stat(count)), stat="count", position= 'fill') +
+  scale_fill_manual(values = c("#a73c5a", "#ff7954"))
+```
+
+### Chi-Square Test
+
+From a chi-square test on the proportion of movies getting a 4+ rating, the p-value is significant, and indicates that the movies that fail the Bechdel Test have a higher proportion of 4+ ratings.
+
+```{r bechdel_male_chi, echo=FALSE}
+#chi square test
+male_ratings = movie_bechdel %>%
+  filter(gender == "M") %>%
+  mutate(passed_bechdel = ifelse(rating_bechdel >= 3, "Passed", "Failed")) %>%
+  group_by(passed_bechdel) %>%
+  summarise(n_ratings_4_plus = sum(rating_user >= 4), n_total = n())
+
+print(male_ratings)
+print(paste("Proportion of males that rate >=4 for movies that passed Bechdel:", male_ratings$n_ratings_4_plus[2]/male_ratings$n_total[2]))
+print(paste("Proportion of males that rate >=4 for movies that failed Bechdel:", male_ratings$n_ratings_4_plus[1]/male_ratings$n_total[1]))
+
+prop.test(male_ratings$n_ratings_4_plus, male_ratings$n_total)
+```
+
+
+# Histograms of the Ratings by Male and Female
+
+```{r histograms, echo = FALSE, warning=FALSE, message=FALSE}
+passed = movie_bechdel %>%
+  filter(rating_bechdel == 3)
+
+failed = movie_bechdel %>%
+  filter(rating_bechdel < 3)
+
+passed_male_ratings = passed %>%
+  filter(rating_bechdel == 3) %>%
+  filter(gender == "M") %>%
+  select(rating_user)
+
+passed_female_ratings = passed %>%
+  filter(rating_bechdel == 3) %>%
+  filter(gender == "F") %>%
+  select(rating_user)
+
+passed_male_ratings = passed %>%
+  filter(rating_bechdel == 3) %>%
+  filter(gender == "M") %>%
+  select(rating_user)
+
+passed_female_ratings = passed %>%
+  filter(rating_bechdel == 3) %>%
+  filter(gender == "F") %>%
+  select(rating_user)
+
+#plots
+passed %>%
+  ggplot( aes(x=rating_user, fill=gender)) +
+  geom_histogram(position = 'dodge') +
+  ggtitle("Distribution of Ratings by Gender \nfor Movies that Pass the Bechdel Test") +
+  scale_fill_manual(values = c("#a73c5a", "#ff7954"))
+  
+failed %>%
+  ggplot( aes(x=rating_user, fill=gender)) +
+  geom_histogram(position = 'dodge') +
+  ggtitle("Distribution of Ratings by Gender \nfor Movies that Fail the Bechdel Test") +
+  scale_fill_manual(values = c("#a73c5a", "#ff7954"))
+
+```
+
+
+
